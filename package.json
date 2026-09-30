@@ -1,0 +1,13 @@
+{
+  "name": "planearea-solver",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PlaneArea Solver - Plane Areas by Integration (static site, no build step)",
+  "scripts": {
+    "test": "node --test tests/engine.test.js",
+    "start": "npx http-server . -p 8080"
+  },
+  "devDependencies": {
+    "mathjs": "^13.2.0"
+  }
+}

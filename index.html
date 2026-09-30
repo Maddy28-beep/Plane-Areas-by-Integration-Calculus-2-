@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlaneArea Solver — Plane Areas by Integration</title>
+<meta name="description" content="Enter a Plane Areas by Integration problem and get the bounded region, the definite integral, a step-by-step solution and an interactive graph. Free, runs entirely in your browser.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#app">Skip to content</a>
+<header class="site">
+  <div class="wrap bar">
+    <a class="brand" href="#/home" aria-label="PlaneArea Solver home">
+      <span class="logo" aria-hidden="true">∫</span>
+      <span><strong>PlaneArea Solver</strong><small>Plane Areas by Integration</small></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Main">
+      <a href="#/home" data-page="home">Home</a>
+      <a href="#/solver" data-page="solver">Solver</a>
+      <a href="#/examples" data-page="examples">Examples</a>
+      <a href="#/how" data-page="how">How It Works</a>
+      <a href="#/about" data-page="about">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="app" class="wrap" tabindex="-1"></main>
+
+<footer class="site-foot wrap">
+  PlaneArea Solver · an educational tool · runs 100% in your browser — no server, no database, no account.
+</footer>
+
+<noscript><p class="wrap">PlaneArea Solver needs JavaScript enabled.</p></noscript>
+
+<!-- Libraries (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/mathjs@13.2.3/lib/browser/math.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+
+<!-- Solver engine (plain scripts, so index.html also works when opened directly from disk) -->
+<script src="js/equations.js"></script>
+<script src="js/parser.js"></script>
+<script src="js/intersections.js"></script>
+<script src="js/bounds.js"></script>
+<script src="js/integration.js"></script>
+<script src="js/areaSolver.js"></script>
+<script src="js/solutionGenerator.js"></script>
+<script src="js/examples.js"></script>
+<script src="js/graph.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
