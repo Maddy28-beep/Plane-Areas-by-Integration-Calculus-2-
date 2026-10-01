@@ -165,3 +165,19 @@ body.fs-lock { overflow: hidden; }
 .fs-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .fs-foot .signature b { font-size: 1.4rem; }
 @media (max-width: 520px) { .site-foot { flex-direction: column; align-items: flex-start; } .fs-foot .signature small { display: none; } }
+
+/* fullscreen solution */
+.fs-body.fs-scroll { overflow-y: auto; padding: 18px 24px 28px; background: var(--bg); }
+.sol-card.is-fs-sol { max-width: 1050px; margin: 0 auto; font-size: 1.2rem; line-height: 1.65; }
+.sol-card.is-fs-sol #fsSolBtn { display: none; }
+.sol-card.is-fs-sol .answer-banner { padding: 16px 22px; border-radius: 14px; }
+.sol-card.is-fs-sol .answer-banner .lab { font-size: .95rem; }
+.sol-card.is-fs-sol .answer-banner .katex { font-size: 1.9em; }
+.sol-card.is-fs-sol .sec h3 { font-size: 1.3rem; margin-bottom: 8px; }
+.sol-card.is-fs-sol .math .katex { font-size: 1.4em; }
+.sol-card.is-fs-sol table.pts { font-size: 1.15rem; }
+@media (max-width: 600px) {
+  .fs-body.fs-scroll { padding: 10px 12px 20px; }
+  .sol-card.is-fs-sol { font-size: 1.05rem; }
+  .sol-card.is-fs-sol .math .katex { font-size: 1.15em; }
+}

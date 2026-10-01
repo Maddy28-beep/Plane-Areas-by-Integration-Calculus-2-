@@ -35,7 +35,7 @@
      The SAME Plotly element is moved into an overlay (not copied), so the curves, shading, points, legend,
      zoom/pan state and every other detail are identical by construction. */
   let fs = null;
-  const resizePlot = el => { if (window.Plotly && el) { try { window.Plotly.Plots.resize(el); } catch (e) { /* ignore */ } } };
+  const resizePlot = el => { if (window.Plotly && el && el.data) { try { window.Plotly.Plots.resize(el); } catch (e) { /* ignore */ } } };
 
   function setGraphFonts(plot, tick, label) { // text sizes only; data and view are untouched
     if (!window.Plotly || !plot.data) return;
@@ -46,25 +46,26 @@
     window.Plotly.restyle(plot, { "textfont.size": label }, [plot.data.length - 1]);
   }
 
-  function openFullscreen(plot, opener) {
+  function openFullscreen(plot, opener, kind = "graph") { // plot = the element to show (graph or solution card)
     if (fs) return;
+    const isGraph = kind === "graph";
     const overlay = document.createElement("div");
     overlay.className = "fs-overlay";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-label", "Graph, fullscreen");
+    overlay.setAttribute("aria-label", isGraph ? "Graph, fullscreen" : "Solution, fullscreen");
     overlay.innerHTML =
       '<div class="fs-panel"><div class="fs-head"><strong>PlaneArea Solver</strong>' +
       '<button type="button" class="fs-exit">✕ Exit Fullscreen</button></div>' +
-      '<div class="fs-body"></div>' +
-      '<div class="fs-foot"><span>Scroll to zoom • Drag to pan • Click legend to hide/show • Esc to exit</span><span class="signature"><b>Maddy Cordova</b></span></div></div>';
+      '<div class="fs-body' + (isGraph ? "" : " fs-scroll") + '"></div>' +
+      '<div class="fs-foot"><span>' + (isGraph ? "Scroll to zoom • Drag to pan • Click legend to hide/show • Esc to exit" : "Scroll to read the full solution • Esc to exit") + '</span><span class="signature"><b>Maddy Cordova</b></span></div></div>';
     const body = $(".fs-body", overlay);
-    fs = { overlay, plot, opener, home: plot.parentNode, next: plot.nextSibling, native: false };
+    fs = { overlay, plot, opener, kind, home: plot.parentNode, next: plot.nextSibling, native: false };
     document.body.appendChild(overlay);
     document.body.classList.add("fs-lock");
     body.appendChild(plot);
-    plot.classList.add("is-fs");
-    setGraphFonts(plot, 23, 26);
+    plot.classList.add(isGraph ? "is-fs" : "is-fs-sol");
+    if (isGraph) setGraphFonts(plot, 23, 26);
 
     fs.ro = typeof ResizeObserver === "function" ? new ResizeObserver(() => resizePlot(plot)) : null;
     if (fs.ro) fs.ro.observe(body);
@@ -97,9 +98,9 @@
     if (f.ro) f.ro.disconnect();
     const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
     if (fsEl) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) { /* ignore */ } }
-    f.plot.classList.remove("is-fs");
+    f.plot.classList.remove("is-fs", "is-fs-sol");
     if (f.home && f.home.isConnected) f.home.insertBefore(f.plot, f.next && f.next.parentNode === f.home ? f.next : null);
-    setGraphFonts(f.plot, 18, 19);
+    if (f.kind === "graph") setGraphFonts(f.plot, 18, 19);
     f.overlay.remove();
     document.body.classList.remove("fs-lock");
     requestAnimationFrame(() => resizePlot(f.plot));
@@ -136,7 +137,9 @@
       '<button class="secondary small" id="fsBtn" type="button" aria-haspopup="dialog">⛶ Fullscreen</button></div></div>' +
       '<div id="plot" class="plot" role="img" aria-label="Graph of the bounded region"></div>' +
       '<p class="hint">Scroll to zoom, drag to pan, click legend entries to show or hide curves. Shaded: the exact region integrated.</p></section>' +
-      '<section class="card"><div class="answer-banner"><span class="lab">Final answer</span><span>' +
+      '<section class="card sol-card"><div class="graph-tools"><h2 style="margin:0">Solution</h2>' +
+      '<button class="secondary small" id="fsSolBtn" type="button" aria-haspopup="dialog">⛶ Fullscreen</button></div>' +
+      '<div class="answer-banner"><span class="lab">Final answer</span><span>' +
       math("A=" + sol.answerTex + "\\ \\text{sq. units}", false) + "</span></div>" +
       sol.sections.map(s => '<div class="sec"><h3>' + esc(s.title) + "</h3>" + blocksHTML(s.blocks) + "</div>").join("") +
       "</section></div>";
@@ -145,6 +148,7 @@
     PA.graph.render(plot, res);
     $("#resetView", out).addEventListener("click", () => PA.graph.reset(plot));
     $("#fsBtn", out).addEventListener("click", () => openFullscreen(plot, $("#fsBtn", out)));
+    $("#fsSolBtn", out).addEventListener("click", () => openFullscreen($(".sol-card", out), $("#fsSolBtn", out), "solution"));
     return sol;
   }
 
