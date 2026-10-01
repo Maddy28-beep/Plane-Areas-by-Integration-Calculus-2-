@@ -57,7 +57,7 @@
       '<div class="fs-panel"><div class="fs-head"><strong>PlaneArea Solver</strong>' +
       '<button type="button" class="fs-exit">✕ Exit Fullscreen</button></div>' +
       '<div class="fs-body"></div>' +
-      '<div class="fs-foot">Scroll to zoom • Drag to pan • Click legend to hide/show • Esc to exit</div></div>';
+      '<div class="fs-foot"><span>Scroll to zoom • Drag to pan • Click legend to hide/show • Esc to exit</span><span class="signature"><b>Maddy Cordova</b></span></div></div>';
     const body = $(".fs-body", overlay);
     fs = { overlay, plot, opener, home: plot.parentNode, next: plot.nextSibling, native: false };
     document.body.appendChild(overlay);
@@ -267,6 +267,7 @@
       root.innerHTML = '<section class="hero"><h1>About</h1></section><section class="card prose"><p>PlaneArea Solver is an educational tool for the topic <b>Plane Areas by Integration</b> in Integral Calculus. It is not a general calculus system: it focuses on areas under curves, between curves, and bounded by the axes and by vertical or horizontal lines.</p>' +
         "<p>Everything runs in your browser. There is no server, no database, no account and no AI service: the parsing, intersection finding, region detection and integration are ordinary, verifiable mathematics (math.js for expression handling, Plotly for graphs, KaTeX for notation).</p>" +
         "<p><b>Honest limits.</b> If the boundaries do not enclose a finite region, or the region is ambiguous, or an equation is outside the supported types, the solver says so instead of guessing.</p>" +
+        "<p>Created by <b>Maddy Cordova</b>.</p>" +
         "<p>Solved problems can be remembered in this browser only (localStorage); you can delete them at any time from the Solver page.</p></section>";
     },
   };
