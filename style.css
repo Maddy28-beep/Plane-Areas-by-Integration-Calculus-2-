@@ -181,3 +181,16 @@ body.fs-lock { overflow: hidden; }
   .sol-card.is-fs-sol { font-size: 1.05rem; }
   .sol-card.is-fs-sol .math .katex { font-size: 1.15em; }
 }
+
+/* fullscreen solution + graph */
+.fs-body.fs-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 14px; padding: 12px; overflow: hidden; background: var(--bg); }
+.fs-split .fs-sol { overflow-y: auto; min-height: 0; padding-right: 4px; }
+.fs-split .fs-sol .sol-card.is-fs-sol { margin: 0; max-width: none; font-size: 1.1rem; }
+.fs-split .fs-sol .sol-card.is-fs-sol .math .katex { font-size: 1.3em; }
+.fs-split .fs-graph { min-height: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 6px; }
+@media (max-width: 1000px) {
+  .fs-body.fs-split { display: block; overflow-y: auto; }
+  .fs-split .fs-sol { overflow: visible; }
+  .fs-split .fs-graph { height: 85vh; margin-top: 14px; }
+  @supports (height: 100dvh) { .fs-split .fs-graph { height: 85dvh; } }
+}

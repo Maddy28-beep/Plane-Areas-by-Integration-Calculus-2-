@@ -46,72 +46,94 @@
     window.Plotly.restyle(plot, { "textfont.size": label }, [plot.data.length - 1]);
   }
 
-  function openFullscreen(plot, opener, kind = "graph") { // plot = the element to show (graph or solution card)
+  const gEl = f => (f && (f.g ? f.g.el : f.kind === "graph" ? f.plot : null));
+  const resizeAll = () => resizePlot(gEl(fs));
+  const div = cls => { const d = document.createElement("div"); d.className = cls; return d; };
+
+  /* kind "graph": just the graph.  kind "solution": the final answer + computation AND the graph (side by side
+     on wide screens, graph below the computation on narrow ones). Elements are moved, never copied. */
+  function openFullscreen(el, opener, kind = "graph", gplot = null) {
     if (fs) return;
     const isGraph = kind === "graph";
     const overlay = document.createElement("div");
     overlay.className = "fs-overlay";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-label", isGraph ? "Graph, fullscreen" : "Solution, fullscreen");
+    overlay.setAttribute("aria-label", isGraph ? "Graph, fullscreen" : "Solution and graph, fullscreen");
     overlay.innerHTML =
       '<div class="fs-panel"><div class="fs-head"><strong>PlaneArea Solver</strong>' +
       '<button type="button" class="fs-exit">✕ Exit Fullscreen</button></div>' +
-      '<div class="fs-body' + (isGraph ? "" : " fs-scroll") + '"></div>' +
-      '<div class="fs-foot"><span>' + (isGraph ? "Scroll to zoom • Drag to pan • Click legend to hide/show • Esc to exit" : "Scroll to read the full solution • Esc to exit") + '</span><span class="signature"><b>Maddy Cordova</b></span></div></div>';
+      '<div class="fs-body"></div>' +
+      '<div class="fs-foot"><span>' + (isGraph ? "Scroll to zoom • Drag to pan • Click legend to hide/show • Esc to exit" : "Computation and graph • Scroll to zoom the graph • Esc to exit") + '</span><span class="signature"><b>Maddy Cordova</b></span></div></div>';
     const body = $(".fs-body", overlay);
-    fs = { overlay, plot, opener, kind, home: plot.parentNode, next: plot.nextSibling, native: false };
+    fs = { overlay, plot: el, opener, kind, home: el.parentNode, next: el.nextSibling, native: false, g: null };
     document.body.appendChild(overlay);
     document.body.classList.add("fs-lock");
-    body.appendChild(plot);
-    plot.classList.add(isGraph ? "is-fs" : "is-fs-sol");
-    if (isGraph) setGraphFonts(plot, 23, 26);
 
-    fs.ro = typeof ResizeObserver === "function" ? new ResizeObserver(() => resizePlot(plot)) : null;
-    if (fs.ro) fs.ro.observe(body);
+    if (isGraph) {
+      body.appendChild(el);
+      el.classList.add("is-fs");
+      setGraphFonts(el, 23, 26);
+    } else {
+      body.classList.add("fs-split");
+      const sol = div("fs-sol"); sol.appendChild(el); el.classList.add("is-fs-sol"); body.appendChild(sol);
+      if (gplot) {
+        const gw = div("fs-graph");
+        fs.g = { el: gplot, home: gplot.parentNode, next: gplot.nextSibling, wrap: gw };
+        gw.appendChild(gplot); gplot.classList.add("is-fs"); body.appendChild(gw);
+        setGraphFonts(gplot, 23, 26);
+      }
+    }
+
+    fs.ro = typeof ResizeObserver === "function" ? new ResizeObserver(resizeAll) : null;
+    if (fs.ro) { fs.ro.observe(body); if (fs.g) fs.ro.observe(fs.g.wrap); }
     $(".fs-exit", overlay).addEventListener("click", () => closeFullscreen());
     fs.onKey = e => { if (e.key === "Escape") { e.preventDefault(); closeFullscreen(); } };
     document.addEventListener("keydown", fs.onKey);
-    fs.onResize = () => resizePlot(plot);
-    window.addEventListener("resize", fs.onResize);
-    window.addEventListener("orientationchange", fs.onResize);
+    window.addEventListener("resize", resizeAll);
+    window.addEventListener("orientationchange", resizeAll);
 
     // real browser fullscreen when available; otherwise the overlay already fills the viewport
     const req = overlay.requestFullscreen || overlay.webkitRequestFullscreen;
     if (req) {
       try {
         const p = req.call(overlay);
-        if (p && p.then) p.then(() => { if (fs) fs.native = true; resizePlot(plot); }, () => { /* overlay fallback */ });
+        if (p && p.then) p.then(() => { if (fs) fs.native = true; resizeAll(); }, () => { /* overlay fallback */ });
         else fs.native = true;
       } catch (e) { /* overlay fallback */ }
     }
-    requestAnimationFrame(() => { resizePlot(plot); $(".fs-exit", overlay).focus(); });
-    setTimeout(() => resizePlot(plot), 250);
+    requestAnimationFrame(() => { resizeAll(); $(".fs-exit", overlay).focus(); });
+    setTimeout(resizeAll, 250);
   }
+
+  function restore(el, home, next) { if (home && home.isConnected) home.insertBefore(el, next && next.parentNode === home ? next : null); }
 
   function closeFullscreen(silent) {
     if (!fs) return;
     const f = fs; fs = null;
     document.removeEventListener("keydown", f.onKey);
-    window.removeEventListener("resize", f.onResize);
-    window.removeEventListener("orientationchange", f.onResize);
+    window.removeEventListener("resize", resizeAll);
+    window.removeEventListener("orientationchange", resizeAll);
     if (f.ro) f.ro.disconnect();
     const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
     if (fsEl) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) { /* ignore */ } }
+    // put everything back exactly where it was (graph first so the solution card keeps its slot)
+    if (f.g) { f.g.el.classList.remove("is-fs"); restore(f.g.el, f.g.home, f.g.next); setGraphFonts(f.g.el, 18, 19); }
     f.plot.classList.remove("is-fs", "is-fs-sol");
-    if (f.home && f.home.isConnected) f.home.insertBefore(f.plot, f.next && f.next.parentNode === f.home ? f.next : null);
+    restore(f.plot, f.home, f.next);
     if (f.kind === "graph") setGraphFonts(f.plot, 18, 19);
     f.overlay.remove();
     document.body.classList.remove("fs-lock");
-    requestAnimationFrame(() => resizePlot(f.plot));
-    setTimeout(() => resizePlot(f.plot), 250);
+    const g = f.g ? f.g.el : f.kind === "graph" ? f.plot : null;
+    requestAnimationFrame(() => resizePlot(g));
+    setTimeout(() => resizePlot(g), 250);
     if (!silent && f.opener && f.opener.isConnected) f.opener.focus();
   }
   // the browser's own Esc / exit gesture leaves native fullscreen: keep the overlay in sync
   ["fullscreenchange", "webkitfullscreenchange"].forEach(ev => document.addEventListener(ev, () => {
     const active = document.fullscreenElement || document.webkitFullscreenElement;
     if (fs && fs.native && !active) closeFullscreen();
-    else if (fs && active) resizePlot(fs.plot);
+    else if (fs && active) resizeAll();
   }));
 
   /* ---------- Solution rendering ---------- */
@@ -148,7 +170,7 @@
     PA.graph.render(plot, res);
     $("#resetView", out).addEventListener("click", () => PA.graph.reset(plot));
     $("#fsBtn", out).addEventListener("click", () => openFullscreen(plot, $("#fsBtn", out)));
-    $("#fsSolBtn", out).addEventListener("click", () => openFullscreen($(".sol-card", out), $("#fsSolBtn", out), "solution"));
+    $("#fsSolBtn", out).addEventListener("click", () => openFullscreen($(".sol-card", out), $("#fsSolBtn", out), "solution", plot));
     return sol;
   }
 
