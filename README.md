@@ -21,6 +21,7 @@ js/
   areaSolver.js         pipeline + validation + dx/dy selection
   solutionGenerator.js  step-by-step write-up (KaTeX)
   graph.js              Plotly graph (shading comes from the same pieces as the integral)
+  exportPptx.js         "Download PowerPoint": title, graph, step-by-step slides (PptxGenJS + html2canvas via CDN)
   examples.js           sample problems (inputs only; nothing is hard-coded per problem)
 tests/engine.test.js    automated tests for the maths engine
 ```

@@ -194,3 +194,9 @@ body.fs-lock { overflow: hidden; }
   .fs-split .fs-graph { height: 85vh; margin-top: 14px; }
   @supports (height: 100dvh) { .fs-split .fs-graph { height: 85dvh; } }
 }
+
+/* PowerPoint export */
+.ppt-status { margin: 0 0 10px; color: var(--teal); font-weight: 600; }
+.ppt-status.bad { color: var(--err); }
+.sol-card.is-fs-sol #dlPptx, .sol-card.is-fs-sol .ppt-status { display: none; }
+button:disabled { opacity: .6; cursor: progress; }

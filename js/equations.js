@@ -214,7 +214,7 @@
       .replace(/\*/g, "").replace(/\bsqrt\b/g, "√").replace(/\bpi\b/g, "π").replace(/\s+/g, " ").trim();
   }
   const texOf = n => n.toTex({ parenthesis: "keep", implicit: "hide" })
-    .replace(/\{ ([a-z])\}/g, " $1").replace(/(\d)~\s*/g, "$1").replace(/~\s*/g, " ").replace(/\s+/g, " ").trim();
+    .replace(/\{ ([a-z])\}/g, " $1").replace(/(\d)~\s*/g, "$1").replace(/(\d)\s*\\cdot\s*(?=[a-z\\(])/g, "$1").replace(/~\s*/g, " ").replace(/\s+/g, " ").trim();
   const freeOf = (node, name) => !node.filter(n => n.type === "SymbolNode" && n.name === name).length;
 
   function symbolsOK(node) {

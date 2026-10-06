@@ -160,7 +160,9 @@
       '<div id="plot" class="plot" role="img" aria-label="Graph of the bounded region"></div>' +
       '<p class="hint">Scroll to zoom, drag to pan, click legend entries to show or hide curves. Shaded: the exact region integrated.</p></section>' +
       '<section class="card sol-card"><div class="graph-tools"><h2 style="margin:0">Solution</h2>' +
-      '<button class="secondary small" id="fsSolBtn" type="button" aria-haspopup="dialog">⛶ Fullscreen</button></div>' +
+      '<div class="tool-btns"><button class="secondary small" id="dlPptx" type="button">⬇ Download PowerPoint</button>' +
+      '<button class="secondary small" id="fsSolBtn" type="button" aria-haspopup="dialog">⛶ Fullscreen</button></div></div>' +
+      '<p class="hint ppt-status" id="pptStatus" role="status" hidden></p>' +
       '<div class="answer-banner"><span class="lab">Final answer</span><span>' +
       math("A=" + sol.answerTex + "\\ \\text{sq. units}", false) + "</span></div>" +
       sol.sections.map(s => '<div class="sec"><h3>' + esc(s.title) + "</h3>" + blocksHTML(s.blocks) + "</div>").join("") +
@@ -170,6 +172,17 @@
     PA.graph.render(plot, res);
     $("#resetView", out).addEventListener("click", () => PA.graph.reset(plot));
     $("#fsBtn", out).addEventListener("click", () => openFullscreen(plot, $("#fsBtn", out)));
+    const dl = $("#dlPptx", out), st = $("#pptStatus", out);
+    dl.addEventListener("click", async () => {
+      const label = dl.textContent;
+      dl.disabled = true; st.hidden = false; st.classList.remove("bad"); st.textContent = "Preparing your PowerPoint…";
+      try {
+        await PA.exportPptx(res, sol, plot, m => { st.textContent = m; });
+        st.textContent = "Done — PlaneArea-Solution.pptx was downloaded.";
+      } catch (e) {
+        console.error(e); st.classList.add("bad"); st.textContent = "Could not create the PowerPoint: " + (e && e.message ? e.message : e);
+      } finally { dl.disabled = false; dl.textContent = label; }
+    });
     $("#fsSolBtn", out).addEventListener("click", () => openFullscreen($(".sol-card", out), $("#fsSolBtn", out), "solution", plot));
     return sol;
   }
