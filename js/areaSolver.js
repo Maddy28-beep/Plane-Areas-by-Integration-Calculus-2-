@@ -39,6 +39,7 @@
     if (e) return { error: e };
     if (spec.xAxis || (spec.under && !curves.some(c => c.kind === "h" && c.value === 0))) add(PA.lineCurve("h", 0, "xaxis", "y=0"));
     if (spec.yAxis) add(PA.lineCurve("v", 0, "yaxis", "x=0"));
+    if (spec.quadrant) { add(PA.lineCurve("h", 0, "xaxis", "y=0")); add(PA.lineCurve("v", 0, "yaxis", "x=0")); } // "in the first quadrant" brings in both axes
     return { curves };
   }
 
@@ -69,16 +70,34 @@
     const ranges = {
       x: vs.length >= 2 ? [Math.min(...vs), Math.max(...vs)] : [-60, 60],
       y: hs.length >= 2 ? [Math.min(...hs), Math.max(...hs)] : [-60, 60],
+      explicit: vs.length >= 2 || hs.length >= 2, // limits were given: everything between them counts
     };
+    if (spec.quadrant) { // restrict to the named quadrant
+      const q = spec.quadrant, xs = q === 1 || q === 4 ? [0, 60] : [-60, 0], ys = q === 1 || q === 2 ? [0, 60] : [-60, 0];
+      ranges.x = [Math.max(ranges.x[0], xs[0]), Math.min(ranges.x[1], xs[1])];
+      ranges.y = [Math.max(ranges.y[0], ys[0]), Math.min(ranges.y[1], ys[1])];
+    }
 
     // intersections of every pair
-    const points = [];
-    for (let i = 0; i < curves.length; i++) for (let j = i + 1; j < curves.length; j++) {
-      for (const p of PA.intersections.pair(curves[i], curves[j], ranges)) points.push({ ...p, a: curves[i].id, b: curves[j].id });
+    const allPairs = () => {
+      const pts = [];
+      for (let i = 0; i < curves.length; i++) for (let j = i + 1; j < curves.length; j++) {
+        for (const p of PA.intersections.pair(curves[i], curves[j], ranges)) pts.push({ ...p, a: curves[i].id, b: curves[j].id });
+      }
+      return pts;
+    };
+    let points = allPairs();
+    if (points.length > 8 && !ranges.explicit) {
+      // periodic curves (sin, tan, ...) meet an axis over and over: look only near the given lines / the origin
+      const near = (vals, rg) => [Math.max(rg[0], Math.min(0, ...vals) - 4), Math.min(rg[1], Math.max(0, ...vals) + 4)];
+      if (!vs.length) return fail("AMBIGUOUS", "the curves meet repeatedly (periodic); give limits such as x = a and x = b");
+      ranges.x = near(vs, ranges.x); ranges.y = near(hs, ranges.y);
+      points = allPairs();
     }
     if (!points.length) return fail("NO_REGION", "the boundaries never meet");
 
     const region = PA.bounds.detectRegion(curves, points, ranges);
+    if (region.ambiguous) return fail("AMBIGUOUS", "several regions share a boundary; say which one you mean (add a limit or another boundary)");
     if (!region.faces.length) return fail("NO_REGION", "the boundaries do not enclose an area");
 
     // try both slicing directions and keep the simpler valid one
@@ -102,8 +121,13 @@
     if (!Number.isFinite(integ.value) || integ.value < -1e-9) return fail("VALIDATION", "negative or undefined area");
     for (const p of sl.pieces) {
       if (!(p.t1 > p.t0)) return fail("VALIDATION", "invalid limits");
-      const m = (p.t0 + p.t1) / 2;
-      if (!(p.upper.fn(m) > p.lower.fn(m))) return fail("VALIDATION", "upper/lower order");
+      let strict = false; // upper >= lower everywhere (they may touch, e.g. y = x^2 and y = x^4 at 0), and above somewhere
+      for (const f of [0.11, 0.3, 0.5, 0.7, 0.89]) {
+        const t = p.t0 + (p.t1 - p.t0) * f, d = p.upper.fn(t) - p.lower.fn(t);
+        if (d < -1e-9) return fail("VALIDATION", "upper/lower order");
+        if (d > 1e-9) strict = true;
+      }
+      if (!strict) return fail("VALIDATION", "upper/lower order");
     }
     if (Math.abs(integ.value - sl.faceArea) > 0.02 * Math.max(sl.faceArea, 1e-9) + 1e-6) return fail("VALIDATION", "integral does not match the detected region");
     if (other && Math.abs(other.integ.value - integ.value) > 1e-4 * Math.max(1, integ.value)) return fail("VALIDATION", "dx and dy disagree");

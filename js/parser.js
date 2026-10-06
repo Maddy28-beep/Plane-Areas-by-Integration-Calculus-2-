@@ -23,6 +23,8 @@
       .replace(/[×·⋅∙✕]/g, "*").replace(/[÷∕⁄]/g, "/")
       .replace(/π/g, "pi").replace(/\\pi\b/g, "pi")
       .replace(/√\s*\(/g, "sqrt(").replace(/√\s*([a-z0-9.]+)/gi, "sqrt($1)")
+      .replace(/\|([^|]+)\|/g, "abs($1)")
+      .replace(/[{]/g, "(").replace(/[}]/g, ")")
       .replace(/[“”]/g, '"').replace(/[’‘]/g, "'")
       .replace(/[  -​  　]/g, " ");
   }
@@ -112,9 +114,9 @@
 
   // a run of "math characters" that does not start or end inside an English word
   const FN = "(?:sin|cos|tan|sqrt|ln|log|exp|abs)(?![a-z])";
-  const TOK = "(?:" + FN + "|(?<![a-z])(?:pi|e)(?![a-z])|[xy](?![a-z])|[\\d.+\\-*/^()\\s])";
+  const TOK = "(?:" + FN + "|(?<![a-z])(?:pi|e)(?![a-z])|[xy]+(?![a-z])|[\\d.+\\-*/^()\\s])";
   const EQ = new RegExp("(?<![a-z])(" + TOK + "+?)=(" + TOK + "+)", "gi");
-  const NUM = "(-?\\d*\\.?\\d+(?:/\\d+)?|-?pi(?:/\\d+)?|-?\\d*pi(?:/\\d+)?)";
+  const NUM = "(-?\\d*pi(?:/\\d+)?|-?\\d*\\.?\\d+(?:/\\d+)?)"; // pi forms first so "2pi" is not read as "2"
 
   function parse(raw) {
     const out = {
@@ -124,6 +126,10 @@
     let t = normalize(raw || "").toLowerCase();
     if (!t) return out;
 
+    // function notation: f(x) = ... means y = ... ; f(y) = ... means x = ...
+    t = t.replace(/\b[a-hk-wz]\s*\(\s*x\s*\)\s*=/g, "y =").replace(/\b[a-hk-wz]\s*\(\s*y\s*\)\s*=/g, "x =");
+    const quad = t.match(/\b(first|second|third|fourth|1st|2nd|3rd|4th)\s+quadrant\b/);
+    if (quad) out.quadrant = { first: 1, "1st": 1, second: 2, "2nd": 2, third: 3, "3rd": 3, fourth: 4, "4th": 4 }[quad[1]];
     out.xAxis = /\bx[\s-]*axis\b/.test(t);
     out.yAxis = /\by[\s-]*axis\b/.test(t);
     out.under = /\b(under|beneath)\b/.test(t);

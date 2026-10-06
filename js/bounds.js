@@ -30,7 +30,7 @@
       const a = Math.min(...ts), b = Math.max(...ts);
       for (let k = 0; k <= 200; k++) {
         const t = a + (b - a) * k / 200, v = c.fn(t);
-        if (Number.isFinite(v)) c.kind === "fx" ? grow(t, v) : grow(v, t);
+        if (Number.isFinite(v) && Math.abs(v) <= 10 * Math.max(x1 - x0, y1 - y0, 1) + 10) c.kind === "fx" ? grow(t, v) : grow(v, t); // ignore poles (tan, 1/x)
       }
     }
     const sx = Math.max(x1 - x0, 1), sy = Math.max(y1 - y0, 1);
@@ -99,12 +99,13 @@
     const N = nodes.length;
     for (let u = 0; u < N; u++) for (const v0 of order[u]) {
       if (seen.has(u * N + v0)) continue;
-      const loop = [], srcs = new Set();
+      const loop = [], srcs = new Set(), eks = new Set();
       let a = u, b = v0, guard = 0;
       while (!seen.has(a * N + b) && guard++ < 4 * N) {
         seen.add(a * N + b);
         loop.push(a);
         const ek = a < b ? a + "|" + b : b + "|" + a;
+        eks.add(ek);
         for (const s of edges.get(ek) || []) srcs.add(s);
         const nb = order[b], i = nb.indexOf(a);
         const w = nb[(i - 1 + nb.length) % nb.length];
@@ -116,11 +117,16 @@
         area += x * y2 - x2 * y;
       }
       area /= 2;
-      if (area > minArea) faces.push({ poly: loop.map(i => nodes[i]), area, sources: srcs });
+      if (area > minArea) faces.push({ poly: loop.map(i => nodes[i]), area, sources: srcs, eks });
     }
     if (!faces.length) return { faces: [], all: 0 };
+    if (ranges.explicit) return { faces, all: faces.length, box }; // limits given (x = a .. x = b): count every region between them
     const most = Math.max(...faces.map(f => f.sources.size));
     const kept = faces.filter(f => f.sources.size === most);
+    // two kept regions that share a whole edge are pieces of one bigger region (e.g. a circle cut by a line): ambiguous
+    for (let i = 0; i < kept.length; i++) for (let j = i + 1; j < kept.length; j++) {
+      for (const e of kept[i].eks) if (kept[j].eks.has(e)) return { faces: [], all: faces.length, box, ambiguous: true };
+    }
     return { faces: kept, all: faces.length, box };
   }
 

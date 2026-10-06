@@ -302,6 +302,12 @@
     if (dy === 1 && F.coef("y", 1).isConst()) return { curves: [mk("fx", "x")] };
     if (dx === 1 && F.coef("x", 1).isConst()) return { curves: [mk("gy", "y")] };
 
+    // rational relations such as xy = 4 or y(x - 1) = 2: solve for the one variable that appears linearly
+    for (const [lin, kind] of [["y", "fx"], ["x", "gy"]]) {
+      if (F.deg(lin) !== 1) continue;
+      const c1 = F.coef(lin, 1), c0 = F.coef(lin, 0), s1 = mpString(c1), s0 = mpString(c0);
+      if (s1 && s0 && !c1.isConst()) return { curves: [functionCurve(kind, M.parse("(-(" + s0 + "))/(" + s1 + ")"), sourceId, tex, plain)] };
+    }
     const branches = (other, kind) => { // F quadratic in `other`, constant leading coefficient
       const A = F.coef(other, 2);
       if (!A.isConst()) return null;

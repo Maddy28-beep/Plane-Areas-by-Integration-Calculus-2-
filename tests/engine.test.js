@@ -66,7 +66,7 @@ test("intersection calculator finds tangent and crossing roots", () => {
 
 /* ---- honest failures ---- */
 test("invalid input: no equations", () => fails("blah blah, nothing mathematical here", "PARSE"));
-test("unsupported equation", () => fails("Find the area bounded by y = x^2 and x*y = 4.", "UNSUPPORTED"));
+test("unsupported equation", () => fails("Find the area bounded by y = x^2 and x^3 + y^3 = 5.", "UNSUPPORTED"));
 test("ambiguous: single curve only", () => fails("Find the area bounded by y = x^2.", "AMBIGUOUS"));
 test("unbounded: parallel lines never enclose area", () => fails("Find the area bounded by y = x + 1 and y = x + 2.", "NO_REGION"));
 test("unbounded: curve and line that never meet", () => fails("Find the area bounded by y = x^2 and y = -1.", "NO_REGION"));
@@ -168,3 +168,40 @@ test("solve never throws, even on hostile input", () => {
     assert.equal(PA.solve(q).ok, false, q);
   }
 });
+
+/* ================= wider coverage (problems a teacher is likely to try) ================= */
+const near = (r, want, tol = 1e-4) => assert.ok(Math.abs(r.value - want) < tol * Math.max(1, Math.abs(want)), r.value + " vs " + want);
+const E = Math.E, PI = Math.PI;
+
+test("regions under/over the x-axis and cubics", () => {
+  near(ok("Find the area bounded by y = 4x - x² and the x-axis."), 32 / 3);
+  near(ok("Find the area bounded by y = x² - 4 and the x-axis."), 32 / 3);
+  near(ok("Find the area bounded by y = x³ - 4x and the x-axis."), 8);
+  near(ok("Find the area bounded by y = x^2 - 4x, the x-axis, x = 2 and x = 5."), 23 / 3);
+});
+test("both lobes count when limits are given: y=x and y=x^2 from x=0 to x=2", () => near(ok("Find the area between the curves y = x and y = x² from x = 0 to x = 2."), 1));
+test("touching curves: y=x^2 and y=x^4", () => near(ok("Find the area bounded by the curves y = x^2 and y = x^4."), 4 / 15));
+test("pi in limits: sin x from 0 to 2π", () => near(ok("Find the area bounded by y = sin x and the x-axis from x = 0 to x = 2π."), 4));
+test("single limit with a periodic curve: tan x, x-axis, x = π/4", () => near(ok("Find the area bounded by y = tan x, y = 0 and x = π/4."), Math.log(2) / 2));
+test("function notation f(x) = ...", () => near(ok("Find the area bounded by f(x) = 4 - x² and the x-axis."), 32 / 3));
+test("absolute value bars", () => near(ok("Find the area bounded by y = |x| and y = 2."), 4));
+test("braces and rational relations", () => {
+  near(ok("Find the area bounded by y = e^{x}, y = 1 and x = 2."), E * E - 3);
+  near(ok("Find the area bounded by xy = 4, y = 0, x = 1 and x = 4."), 8 * Math.log(2));
+});
+test("ellipse and circle of any radius", () => {
+  near(ok("Find the area of the ellipse x²/9 + y²/4 = 1."), 6 * PI);
+  near(ok("Find the area enclosed by x² + y² = 9."), 9 * PI);
+  near(ok("Find the area enclosed by x² + y² = 4."), 4 * PI);
+});
+test("quadrant wording", () => {
+  near(ok("Find the area bounded by y = x³ and y = x in the first quadrant."), 0.25);
+  near(ok("Find the area in the first quadrant bounded by 3x + 2y = 6."), 3);
+});
+test("implicit pairs and standard-form lines", () => {
+  near(ok("Find the area bounded by y² = 8x and x² = 8y."), 64 / 3);
+  near(ok("Find the area bounded by y² = x and x - y = 2."), 4.5);
+  near(ok("Find the area bounded by x = 0, y = 0 and x + y = 3."), 4.5);
+});
+test("a circle cut by a line is ambiguous, not silently summed", () => fails("Find the area bounded by x^2 + y^2 = 4 and x = 1.", "AMBIGUOUS"));
+test("a periodic curve and the axis with no limits is ambiguous", () => fails("Find the area bounded by y = sin x and the x-axis.", "AMBIGUOUS"));

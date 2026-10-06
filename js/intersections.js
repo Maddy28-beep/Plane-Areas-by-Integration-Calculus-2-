@@ -48,11 +48,11 @@
   /** Where a branch function stops being defined (e.g. the ends of a sideways parabola's two branches). */
   function domainEdges(fn, a, b, n = 6000) {
     const out = [], step = (b - a) / n;
-    let prev = fn(a);
+    let pt = a, prev = fn(a);
     for (let k = 1; k <= n; k++) {
       const t = a + k * step, cur = fn(t);
       if (Number.isFinite(prev) !== Number.isFinite(cur)) {
-        let lo = t - step, hi = t; // find the last defined point by bisection
+        let lo = pt, hi = t; // lo/hi are the real previous and current grid points; bisect to the last defined point
         const loFinite = Number.isFinite(prev);
         for (let it = 0; it < 100; it++) {
           const mid = (lo + hi) / 2;
@@ -60,7 +60,7 @@
         }
         out.push(loFinite ? lo : hi);
       }
-      prev = cur;
+      pt = t; prev = cur;
     }
     return out;
   }
